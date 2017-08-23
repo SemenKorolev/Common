@@ -1,0 +1,10 @@
+58c58
+<     protected function normalize($data)
+---
+>     protected function normalize($data, $iter = 0)
+59a60
+>         if ($iter > 10) return;
+82c83
+<                 $normalized[$key] = $this->normalize($value);
+---
+>                 $normalized[$key] = $this->normalize($value, $iter + 1);
