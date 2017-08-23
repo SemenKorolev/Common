@@ -87,7 +87,7 @@ echo "//  Containers started!  //"
 echo "// --------------------- //"
 echo
 
-CGI="/var/www/${USE_HOST}/cgi"
+CGI="/var/www/${HOST}/cgi"
 EXEC="docker exec -i ${DOCKER_NAME_PREFIX}nginx"
 $EXEC "$CGI"/../install.sh
 $EXEC php "$CGI"/bootstrap.php ini_file_set LOCAL_INI global.default_host "$HOST"
@@ -97,3 +97,5 @@ $EXEC php "$CGI"/bootstrap.php ini_file_set LOCAL_INI sql.port "$SQL_PORT"
 $EXEC php "$CGI"/bootstrap.php ini_file_set LOCAL_INI sql.user "$SQL_USER"
 $EXEC php "$CGI"/bootstrap.php ini_file_set LOCAL_INI sql.pass "$SQL_PASS"
 $EXEC php "$CGI"/bootstrap.php ini_file_set LOCAL_INI sql.db "$SQL_DB"
+
+$EXEC php "$CGI"/../phpunit.phar --filter=testSmoke
