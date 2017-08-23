@@ -1,41 +1,61 @@
 #!/usr/bin/env bash
 
 cd "`dirname "$0"`"
-cd cgi
 
-rm -rf vendor
-[ -f composer.lock ] && mv composer.lock{,.old}
-[ ! -f composer.phar ] && curl -sS 'https://getcomposer.org/installer' | php
-php composer.phar install
-php composer.phar update
-patch vendor/monolog/monolog/src/Monolog/Formatter/NormalizerFormatter.php patch/normalizer.patch
-patch vendor/monolog/monolog/src/Monolog/ErrorHandler.php patch/errorhandler.patch
-
-which phpunit >/dev/null 2>&1
-if [ "$?" -ne 0 ]; then
-    echo "Installing phpunit..."
-    wget "https://phar.phpunit.de/phpunit-5.7.phar" -O phpunit.phar
-    chmod +x phpunit.phar
-    mv phpunit.phar /usr/local/bin/phpunit
+# Install composer itself
+if [ ! -f "composer.phar" ]; then
+    echo "Installing Composer .."
+    curl -sS 'https://getcomposer.org/installer' | php
+    chmod a+x composer.phar
+    [ "$EUID" -eq "0" ] && cp composer.phar /usr/local/bin/composer
 fi
 
-if [ -d "../www/css" ]; then
+# Install PHPUnit
+if [ ! -f "phpunit.phar" ]; then
+    echo "Installing PHPUnit .."
+    ver="3.7"
+    php_ver=`php -v | head -1 | cut -d" " -f2`
+    if [ "$php_ver" = "`echo -e "${php_ver}\n5.6" | sort -rV | head -n1`" ]; then
+        ver="5.7"
+    fi
+    wget "https://phar.phpunit.de/phpunit-${ver}.phar" -O phpunit.phar
+    chmod a+x phpunit.phar
+    [ "$EUID" -eq "0" ] && cp phpunit.phar /usr/local/bin/phpunit
+fi
+
+# Composer install/update
+./composer.phar install
+./composer.phar update
+
+# Patch NormalizerFormatter.php
+p1="cgi/vendor/monolog/monolog/src/Monolog/Formatter/NormalizerFormatter.php"
+p2="cgi/patch/normalizer.patch"
+if [ -f "$p1" ] && [ -f "$p2" ]; then
+    patch "$p1" "$p2"
+fi
+
+# Patch ErrorHandler.php
+p1="cgi/vendor/monolog/monolog/src/Monolog/ErrorHandler.php"
+p2="cgi/patch/errorhandler.patch"
+if [ -f "$p1" ] && [ -f "$p2" ]; then
+    patch "$p1" "$p2"
+fi
+
+# SCSS
+if [ -d "www/css" ]; then
     cd ../www/css
-    [ -f sass.pid ] && kill `cat sass.pid`
+    if [ -f sass.pid ] && kill `cat sass.pid` >/dev/null 2>&1; then
+        echo "Killed previous sass process .. PID = "`cat sass.pid`
     rm -f *.css *.css.map
     nohup sass --watch .:. --style compressed >sass.log 2>&1 &
-    echo "$!" > sass.pid
+    echo "$!" >sass.pid
     sleep 5
     cd -
 fi
 
-../js.min.sh
-../css.min.sh
+./js.min.sh
+./css.min.sh
 
-mkdir -p logs stat
-mkdir -p ../www/screenshot
-mkdir -p ../www/captcha
-mkdir -p ../www/latex
-mkdir -p ../www/upload/vc
+mkdir -p cgi/logs cgi/stat
 
-./cron.sh
+./cgi/cron.sh
