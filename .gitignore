@@ -1,0 +1,8 @@
+/composer.phar
+/phpunit.phar
+/vars/*
+/www/captcha/*
+/www/css/*.css
+/www/css/*.css.map
+/www/css/sass.log
+/www/css/sass.pid

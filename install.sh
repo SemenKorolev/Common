@@ -46,6 +46,7 @@ if [ -d "www/css" ]; then
     cd ../www/css
     if [ -f sass.pid ] && kill `cat sass.pid` >/dev/null 2>&1; then
         echo "Killed previous sass process .. PID = "`cat sass.pid`
+    fi
     rm -f *.css *.css.map
     nohup sass --watch .:. --style compressed >sass.log 2>&1 &
     echo "$!" >sass.pid
@@ -53,9 +54,10 @@ if [ -d "www/css" ]; then
     cd -
 fi
 
-./js.min.sh
-./css.min.sh
+[ -x "js.min.sh" ] && ./js.min.sh
+[ -x "css.min.sh" ] && ./css.min.sh
 
-mkdir -p cgi/logs cgi/stat
+mkdir -p cgi/logs
+mkdir -p cgi/stat
 
-./cgi/cron.sh
+[ -x "cgi/cron.sh" ] && ./cgi/cron.sh
